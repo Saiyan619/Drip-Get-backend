@@ -67,5 +67,49 @@ const getProfile = async (req, res, next) => {
     next(error);
   }
 };
+const updateProfile = async (req, res, next) => {
+  try {
+    const { firstName, lastName, phone, address } = req.body;
+    const user = await User.findOne({ clerkId: req.user.id });
 
-module.exports = { register, login, getProfile };
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update mutable fields
+    user.firstName = firstName || user.firstName;
+    user.lastName = lastName || user.lastName;
+    user.phone = phone || user.phone;
+    user.address = address || user.address;
+
+    await user.save();
+
+    // Sync with Clerk metadata
+    await clerk.users.updateUser(req.user.id, {
+      publicMetadata: {
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        address: user.address,
+      },
+    });
+
+    res.status(200).json({
+      message: 'Profile updated',
+      user: {
+        id: user.clerkId,
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        address: user.address,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { register, login, getProfile, updateProfile };

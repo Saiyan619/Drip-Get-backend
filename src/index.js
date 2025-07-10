@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
+const productRoutes = require('./routes/productRoutes');
 const errorHandler = require('./middleware/errorMiddleware');
 
 // Load environment variables
@@ -20,6 +21,7 @@ app.use(express.json()); // Parse JSON requests
 
 // User authentication routes
 app.use('/api/auth', authRoutes); // Mounts /api/auth/register, /api/auth/login, /api/auth/profile
+app.use('/api/products', productRoutes); // Product routes
 
 // Health check route
 app.get('/health', (req, res) => {
