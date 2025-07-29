@@ -43,4 +43,49 @@ const updateProductSchema = [
   body('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
 ];
 
-module.exports = { registerSchema, loginSchema, createProductSchema, updateProductSchema };
+const addToCartSchema = [
+  body('productId').isMongoId().withMessage('Valid product ID is required'),
+  body('size').notEmpty().withMessage('Size is required'),
+  body('color').notEmpty().withMessage('Color is required'),
+  body('quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
+];
+
+const updateCartItemSchema = [
+  body('size').notEmpty().withMessage('Size is required'),
+  body('color').notEmpty().withMessage('Color is required'),
+  body('quantity')
+    .isInt({ min: 1 })
+    .withMessage('Quantity must be at least 1'),
+];
+
+const createOrderSchema = [
+  body('shippingAddress.firstName').notEmpty().withMessage('First name is required'),
+  body('shippingAddress.lastName').notEmpty().withMessage('Last name is required'),
+  body('shippingAddress.street').notEmpty().withMessage('Street is required'),
+  body('shippingAddress.city').notEmpty().withMessage('City is required'),
+  body('shippingAddress.state').notEmpty().withMessage('State is required'),
+  body('shippingAddress.zipCode').notEmpty().withMessage('Zip code is required'),
+  body('shippingAddress.country').notEmpty().withMessage('Country is required'),
+  body('shippingAddress.phone').notEmpty().withMessage('Phone is required'),
+  // body('checkoutSessionId').notEmpty().withMessage('Checkout session ID is required'),//Need to add it after payment
+];
+
+const updateOrderStatusSchema = [
+  body('status').isIn(['pending', 'paid', 'shipped', 'delivered']).withMessage('Invalid status'),
+];
+
+const createPaymentIntentSchema = [
+  body('orderId').isMongoId().withMessage('Valid order ID is required'),
+];
+
+module.exports = {
+  registerSchema,
+  loginSchema,
+  createProductSchema,
+  updateProductSchema,
+  addToCartSchema,
+  updateCartItemSchema,
+  createOrderSchema,
+  updateOrderStatusSchema,
+  createPaymentIntentSchema
+};

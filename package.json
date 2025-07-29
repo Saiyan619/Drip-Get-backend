@@ -12,13 +12,16 @@
   "description": "",
   "dependencies": {
     "@clerk/clerk-sdk-node": "^4.13.23",
+    "@sendgrid/mail": "^8.1.5",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
     "mongoose": "^8.16.1",
-    "stripe": "^18.3.0"
+    "resend": "^4.7.0",
+    "stripe": "^18.3.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
