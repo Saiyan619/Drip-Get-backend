@@ -23,7 +23,7 @@ const orderSchema = new mongoose.Schema({
     zipCode: { type: String, required: true },
     phone: { type: String, required: true },
   },
-  stripePaymentId: { type: String, required: true },
+  stripePaymentId: { type: String, default: null },
 }, { timestamps: { createdAt: 'createdAt', updatedAt: false } });
 
 orderSchema.index({ customerId: 1, orderNumber: 1 }); // For lookups

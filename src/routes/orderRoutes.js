@@ -17,3 +17,4 @@ router.get('/admin/orders', authMiddleware, adminMiddleware, getAllOrders);
 router.put('/admin/orders/:id/status', authMiddleware, adminMiddleware, validateUpdateOrderStatus, updateOrderStatus);
 
 module.exports = router;
+

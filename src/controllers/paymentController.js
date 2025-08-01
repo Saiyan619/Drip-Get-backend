@@ -60,33 +60,51 @@ const handleWebhook = async (req, res, next) => {
   try {
     const sig = req.headers['stripe-signature'];
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
+    
     // Verify webhook signature
     const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-
+    
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const userId = session.metadata.userId;
-      // Find order with matching checkoutSessionId
-           // Find order with matching session ID
-      const order = await Order.findOne({ 
+      const orderId = session.metadata.orderId; // Extract orderId from metadata
+      console.log('Webhook event:', event);
+
+      console.log(`Processing completed checkout for order: ${orderId}`);
+      
+      // Find order with matching session ID and orderId
+      const order = await Order.findOne({
         _id: orderId,
-        stripePaymentId: session.id 
+        customerId: userId, // Also verify the customer
+        stripePaymentId: session.id
       });
+      
       
       if (order) {
         order.status = 'paid';
-        await order.save(); 
-                console.log(`Order ${order.orderNumber} marked as paid`);
+        order.paidAt = new Date(); // Add payment timestamp
+        await order.save();
+        
+        console.log(`Order ${order.orderNumber} marked as paid`);
+        
+        // Clear the user's cart after successful payment
+        await Cart.findOneAndDelete({ customerId: userId });
+        
         // Send email confirmation
         await sendOrderConfirmation(userId, order);
+      } else {
+        console.error(`Order not found for session: ${session.id}, orderId: ${orderId}`);
       }
     }
-
+    
     res.status(200).json({ received: true });
   } catch (error) {
+    console.error('Webhook error:', error);
     next(error);
   }
 };
 
-module.exports = { createPaymentIntent, handleWebhook };
+module.exports = {
+  createPaymentIntent,
+  handleWebhook,
+}

@@ -8,6 +8,7 @@ const cardRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const errorHandler = require('./middleware/errorMiddleware');
+const { handleWebhook } = require('./controllers/paymentController');
 
 // Load environment variables
 dotenv.config();
@@ -18,8 +19,13 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+
 // Middleware
 app.use(cors()); // Enable frontend communication
+
+// Handle Stripe webhook (public, secured by Stripe signature)
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+
 app.use(express.json()); // Parse JSON requests
 
 // User authentication routes
@@ -28,6 +34,7 @@ app.use('/api/products', productRoutes); // Product routes
 app.use('/api/cart', cardRoutes); // Cart routes
 app.use('/api/orders', orderRoutes); 
 app.use('/api/payments', paymentRoutes); // Payment routes
+
 
 
 // Health check route
