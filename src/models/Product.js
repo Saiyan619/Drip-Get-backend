@@ -16,10 +16,10 @@ const productSchema = new mongoose.Schema({
   isActive: { type: Boolean, required: true, default: true },
 }, { timestamps: { createdAt: 'createdAt', updatedAt: false } });
 
-// ✅ Full-text search index
+//  Full-text search index
 productSchema.index({ name: 'text', description: 'text' });
 
-// ✅ Optional filter optimization
+//  Optional filter optimization
 productSchema.index({ category: 1 });
 
 module.exports = mongoose.model('Product', productSchema);

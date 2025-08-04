@@ -15,33 +15,147 @@ const registerSchema = [
 const loginSchema = [];
 
 const createProductSchema = [
-  body('name').notEmpty().withMessage('Name is required'),
-  body('description').notEmpty().withMessage('Description is required'),
-  body('category').notEmpty().withMessage('Category is required'),
-  body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-  body('salePrice').optional().isFloat({ min: 0 }).withMessage('Sale price must be a positive number'),
-  body('variants').isArray({ min: 1 }).withMessage('At least one variant is required'),
-  body('variants.*.size').notEmpty().withMessage('Size is required for each variant'),
-  body('variants.*.color').notEmpty().withMessage('Color is required for each variant'),
-  body('variants.*.inventory').isInt({ min: 0 }).withMessage('Inventory must be a non-negative integer'),
-  body('variants.*.sku').notEmpty().withMessage('SKU is required for each variant'),
-  body('images').optional().isArray().withMessage('Images must be an array of strings'),
+   body('name')
+    .notEmpty()
+    .withMessage('Name is required'),
+
+  body('description')
+    .notEmpty()
+    .withMessage('Description is required'),
+
+  body('category')
+    .notEmpty()
+    .withMessage('Category is required'),
+
+  body('price')
+    .notEmpty()
+    .withMessage('Price is required')
+    .bail()
+    .isFloat({ min: 0 })
+    .withMessage('Price must be a positive number'),
+
+  body('salePrice')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Sale price must be a positive number'),
+
+  body('variants')
+    .custom((value) => {
+      // Parse if value is a string (sent from multipart/form-data)
+      let variants;
+      try {
+        variants = typeof value === 'string' ? JSON.parse(value) : value;
+      } catch {
+        throw new Error('Variants must be a valid JSON array');
+      }
+
+      if (!Array.isArray(variants) || variants.length === 0) {
+        throw new Error('At least one variant is required');
+      }
+
+      for (let i = 0; i < variants.length; i++) {
+        const variant = variants[i];
+        if (!variant.size) throw new Error(`Size is required for variant ${i + 1}`);
+        if (!variant.color) throw new Error(`Color is required for variant ${i + 1}`);
+        if (variant.inventory === undefined || variant.inventory < 0 || isNaN(variant.inventory)) {
+          throw new Error(`Inventory must be a non-negative integer for variant ${i + 1}`);
+        }
+        if (!variant.sku) throw new Error(`SKU is required for variant ${i + 1}`);
+      }
+
+      return true;
+    }),
+
+  // Optional: Validate image URLs if passed (not file uploads)
+  body('images')
+    .optional()
+    .custom((value) => {
+      const images = typeof value === 'string' ? JSON.parse(value) : value;
+      if (!Array.isArray(images)) throw new Error('Images must be an array of strings');
+      for (let url of images) {
+        if (typeof url !== 'string') throw new Error('Each image must be a string URL');
+      }
+      return true;
+    }),
 ];
 
 const updateProductSchema = [
-  body('name').optional().notEmpty().withMessage('Name cannot be empty'),
-  body('description').optional().notEmpty().withMessage('Description cannot be empty'),
-  body('category').optional().notEmpty().withMessage('Category cannot be empty'),
-  body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-  body('salePrice').optional().isFloat({ min: 0 }).withMessage('Sale price must be a positive number'),
-  body('variants').optional().isArray({ min: 1 }).withMessage('At least one variant is required'),
-  body('variants.*.size').optional().notEmpty().withMessage('Size cannot be empty'),
-  body('variants.*.color').optional().notEmpty().withMessage('Color cannot be empty'),
-  body('variants.*.inventory').optional().isInt({ min: 0 }).withMessage('Inventory must be a non-negative integer'),
-  body('variants.*.sku').optional().notEmpty().withMessage('SKU cannot be empty'),
-  body('images').optional().isArray().withMessage('Images must be an array of strings'),
-  body('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
+   body('name')
+    .optional()
+    .notEmpty()
+    .withMessage('Name cannot be empty'),
+  body('description')
+    .optional()
+    .notEmpty()
+    .withMessage('Description cannot be empty'),
+  body('category')
+    .optional()
+    .notEmpty()
+    .withMessage('Category cannot be empty'),
+  body('price')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Price must be a positive number'),
+  body('salePrice')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Sale price must be a positive number'),
+  body('variants')
+    .optional()
+    .custom((value) => {
+      if (!value) return true;
+      let variants;
+      try {
+        variants = typeof value === 'string' ? JSON.parse(value) : value;
+      } catch {
+        throw new Error('Variants must be a valid JSON array');
+      }
+      if (!Array.isArray(variants)) {
+        throw new Error('Variants must be an array');
+      }
+      for (let i = 0; i < variants.length; i++) {
+        const variant = variants[i];
+        if (variant.size !== undefined && variant.size === '') {
+          throw new Error(`Size cannot be empty for variant ${i + 1}`);
+        }
+        if (variant.color !== undefined && variant.color === '') {
+          throw new Error(`Color cannot be empty for variant ${i + 1}`);
+        }
+        if (
+          variant.inventory !== undefined &&
+          (isNaN(variant.inventory) || variant.inventory < 0)
+        ) {
+          throw new Error(`Inventory must be a non-negative integer for variant ${i + 1}`);
+        }
+        if (variant.sku !== undefined && variant.sku === '') {
+          throw new Error(`SKU cannot be empty for variant ${i + 1}`);
+        }
+      }
+      return true;
+    }),
+  // Updated validation for existing images (URLs only)
+  body('existingImages')
+    .optional()
+    .custom((value) => {
+      if (!value) return true;
+      let images;
+      try {
+        images = typeof value === 'string' ? JSON.parse(value) : value;
+      } catch {
+        throw new Error('Existing images must be a valid JSON array');
+      }
+      if (!Array.isArray(images)) throw new Error('Existing images must be an array of strings');
+      for (const url of images) {
+        if (typeof url !== 'string') throw new Error('Each existing image must be a string URL');
+      }
+      return true;
+    }),
+  body('isActive')
+    .optional()
+    .isBoolean()
+    .withMessage('isActive must be a boolean'),
 ];
+
 
 const addToCartSchema = [
   body('productId').isMongoId().withMessage('Valid product ID is required'),

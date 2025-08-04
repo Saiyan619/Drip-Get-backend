@@ -1,5 +1,7 @@
 const clerk = require('../config/clerk');
 const User = require('../models/User');
+const Order = require('../models/Order');
+
 
 const register = async (req, res, next) => {
   try {
@@ -43,6 +45,52 @@ const user = await User.create({
 const login = async (req, res, next) => {
   try {
     res.status(200).json({ message: 'Login successful, handled by Clerk frontend' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAllUsers = async (req, res, next) => {
+  try {
+    // Aggregate user data with order details
+    const users = await User.aggregate([
+      {
+        $lookup: {
+          from: 'orders',
+          localField: 'clerkId',
+          foreignField: 'customerId',
+          as: 'orders',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          clerkId: 1,
+          firstName: 1,
+          lastName: 1,
+          email: 1,
+          orders: {
+            $slice: [
+              {
+                $map: {
+                  input: '$orders',
+                  as: 'order',
+                  in: {
+                    orderNumber: '$$order.orderNumber',
+                    status: '$$order.status',
+                    total: '$$order.total',
+                  },
+                },
+              },
+              3, // Limit to 3 orders
+            ],
+          },
+          totalOrderAmount: { $sum: '$orders.total' },
+        },
+      },
+    ]);
+
+    res.status(200).json(users);
   } catch (error) {
     next(error);
   }
@@ -112,4 +160,4 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getProfile, updateProfile };
+module.exports = { register, login, getProfile, updateProfile, getAllUsers };

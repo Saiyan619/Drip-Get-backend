@@ -59,14 +59,26 @@ const getProductById = async (req, res, next) => {
   }
 };
 
+
 const createProduct = async (req, res, next) => {
   try {
-    const { name, description, category, price, salePrice, variants, images } = req.body;
+    const { name, description, category, price, salePrice } = req.body;
 
-    // Upload images to Cloudinary
-    // const uploadedImages = images ? await Promise.all(images.map(uploadImage)) : [];
-    const uploadedImages = images || [];
+    // Parse variants if it's stringified (from FormData)
+    let variants = [];
+    if (typeof req.body.variants === 'string') {
+      variants = JSON.parse(req.body.variants);
+    } else {
+      variants = req.body.variants || [];
+    }
 
+    let uploadedImages = [];
+
+    if (req.files && req.files.length > 0) {
+      uploadedImages = await Promise.all(
+        req.files.map((file) => uploadImage(file.path))
+      );
+    }
 
     const product = await Product.create({
       name,
@@ -87,24 +99,43 @@ const createProduct = async (req, res, next) => {
 
 const updateProduct = async (req, res, next) => {
   try {
-    const { name, description, category, price, salePrice, variants, images, isActive } = req.body;
+    const { name, description, category, price, salePrice, isActive } = req.body;
 
-    // Upload new images to Cloudinary if provided
-    // const uploadedImages = images ? await Promise.all(images.map(uploadImage)) : undefined;
-        const uploadedImages = images || [];
+    // Parse variants (from FormData stringified JSON)
+    let variants = [];
+    if (typeof req.body.variants === 'string') {
+      variants = JSON.parse(req.body.variants);
+    } else {
+      variants = req.body.variants || [];
+    }
+
+    // Handle new image uploads
+    let uploadedImages = [];
+
+    if (req.files && req.files.length > 0) {
+      uploadedImages = await Promise.all(
+        req.files.map((file) => uploadImage(file.path))
+      );
+    }
+
+    const updatePayload = {
+      name,
+      description,
+      category,
+      price,
+      salePrice,
+      variants,
+      isActive,
+    };
+
+    // Only update images if new ones are uploaded
+    if (uploadedImages.length > 0) {
+      updatePayload.images = uploadedImages;
+    }
 
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      {
-        name,
-        description,
-        category,
-        price,
-        salePrice,
-        images: uploadedImages,
-        variants,
-        isActive,
-      },
+      updatePayload,
       { new: true, runValidators: true }
     ).select('-__v');
 
