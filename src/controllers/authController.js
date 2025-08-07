@@ -52,7 +52,6 @@ const login = async (req, res, next) => {
 
 const getAllUsers = async (req, res, next) => {
   try {
-    // Aggregate user data with order details
     const users = await User.aggregate([
       {
         $lookup: {
@@ -69,21 +68,18 @@ const getAllUsers = async (req, res, next) => {
           firstName: 1,
           lastName: 1,
           email: 1,
+           createdAt: 1, 
           orders: {
-            $slice: [
-              {
-                $map: {
-                  input: '$orders',
-                  as: 'order',
-                  in: {
-                    orderNumber: '$$order.orderNumber',
-                    status: '$$order.status',
-                    total: '$$order.total',
-                  },
-                },
+            $map: {
+              input: '$orders',
+              as: 'order',
+              in: {
+                orderNumber: '$$order.orderNumber',
+                status: '$$order.status',
+                total: '$$order.total',
+                createdAt: '$$order.createdAt', 
               },
-              3, // Limit to 3 orders
-            ],
+            },
           },
           totalOrderAmount: { $sum: '$orders.total' },
         },
