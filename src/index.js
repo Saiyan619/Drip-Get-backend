@@ -19,58 +19,57 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-
-// Middleware
-// app.use(cors()); // Enable frontend communication
+// CORS (dynamic origin check)
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.FRONTEND_URL, // main deployed site
+];
 
 const corsOptions = {
-  origin: [
-    'http://localhost:5173',
-    'https://drip-get-store.vercel.app',
-    process.env.FRONTEND_URL,
-    'https://drip-get-store-git-main-*.vercel.app'
-  ],
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allow non-browser tools
+    if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
-
 app.use(cors(corsOptions));
 
 // Root route
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Backend API is running!',
     version: '1.0.0',
     endpoints: ['/api/auth', '/api/products', '/api/cart', '/api/orders', '/api/payments']
   });
 });
 
-console.log("FRONTEND_URL from env:", process.env.FRONTEND_URL);
+console.log('FRONTEND_URL from env:', process.env.FRONTEND_URL);
 
-
-// Handle Stripe webhook (public, secured by Stripe signature)
+// Stripe webhook route (must be before express.json())
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
-app.use(express.json()); // Parse JSON requests
+// Parse JSON for all other routes
+app.use(express.json());
 
-// User authentication routes
-app.use('/api/auth', authRoutes); // /api/auth/register, /api/auth/login, /api/auth/profile
-app.use('/api/products', productRoutes); // Product routes
-app.use('/api/cart', cardRoutes); // Cart routes
-app.use('/api/orders', orderRoutes); 
-app.use('/api/payments', paymentRoutes); // Payment routes
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/cart', cardRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/payments', paymentRoutes);
 
-
-
-// Health check route
+// Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
-
-// Error handling middleware
+// Error handler
 app.use(errorHandler);
 
 // Start server
