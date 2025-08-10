@@ -47,6 +47,9 @@ app.get('/', (req, res) => {
   });
 });
 
+console.log("FRONTEND_URL from env:", process.env.FRONTEND_URL);
+
+
 // Handle Stripe webhook (public, secured by Stripe signature)
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
