@@ -21,7 +21,26 @@ connectDB();
 
 
 // Middleware
-app.use(cors()); // Enable frontend communication
+// app.use(cors()); // Enable frontend communication
+
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+
+// Root route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Backend API is running!',
+    version: '1.0.0',
+    endpoints: ['/api/auth', '/api/products', '/api/cart', '/api/orders', '/api/payments']
+  });
+});
 
 // Handle Stripe webhook (public, secured by Stripe signature)
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
@@ -29,7 +48,7 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), han
 app.use(express.json()); // Parse JSON requests
 
 // User authentication routes
-app.use('/api/auth', authRoutes); // Mounts /api/auth/register, /api/auth/login, /api/auth/profile
+app.use('/api/auth', authRoutes); // /api/auth/register, /api/auth/login, /api/auth/profile
 app.use('/api/products', productRoutes); // Product routes
 app.use('/api/cart', cardRoutes); // Cart routes
 app.use('/api/orders', orderRoutes); 
