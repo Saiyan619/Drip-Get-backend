@@ -26,8 +26,9 @@ connectDB();
 const corsOptions = {
   origin: [
     'http://localhost:5173',
-    process.env.FRONTEND_URL, // This will be your Vercel URL
-    'https://drip-get-store-git-main-*.vercel.app', // For preview deployments
+    'https://drip-get-store.vercel.app',
+    process.env.FRONTEND_URL,
+    'https://drip-get-store-git-main-*.vercel.app'
   ],
   credentials: true,
   optionsSuccessStatus: 200,
