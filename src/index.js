@@ -22,8 +22,10 @@ connectDB();
 // CORS (dynamic origin check)
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://10.31.144.15:5173',
   process.env.FRONTEND_URL, // main deployed site
 ];
+
 
 const corsOptions = {
   origin: function (origin, callback) {
