@@ -36,8 +36,10 @@ const createPaymentIntent = async (req, res, next) => {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: 'http://localhost:5173/payment-success?session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: 'http://localhost:5173/cancel',
+      // success_url: 'http://localhost:5173/payment-success?session_id={CHECKOUT_SESSION_ID}',
+      success_url: 'https://drip-get-store.vercel.app/payment-success?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: 'https://drip-get-store.vercel.app/cancel',
+      // cancel_url: 'http://localhost:5173/cancel',
       metadata: { 
         userId,
         orderId: order._id.toString() 
