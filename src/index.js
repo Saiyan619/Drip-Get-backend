@@ -19,15 +19,28 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-// Enable CORS for frontend origin
-app.use(
-  cors({
-    origin: 'https://drip-get-store.vercel.app/',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  })
-);
+// CORS (dynamic origin check)
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://10.31.144.15:5173',
+  process.env.FRONTEND_URL, // main deployed site
+];
+
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allow non-browser tools
+    if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+app.use(cors(corsOptions));
 
 // Root route
 app.get('/', (req, res) => {
@@ -37,6 +50,8 @@ app.get('/', (req, res) => {
     endpoints: ['/api/auth', '/api/products', '/api/cart', '/api/orders', '/api/payments']
   });
 });
+
+console.log('FRONTEND_URL from env:', process.env.FRONTEND_URL);
 
 // Stripe webhook route (must be before express.json())
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
