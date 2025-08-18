@@ -46,6 +46,7 @@ const createPaymentIntent = async (req, res, next) => {
       },
     });
     
+
     // Update order with Stripe session ID
     order.stripePaymentId = session.id;
     await order.save();
